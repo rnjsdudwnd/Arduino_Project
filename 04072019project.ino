@@ -1,171 +1,212 @@
 #include <Wire.h>
+#include <LiquidCrystal.h>
+LiquidCrystal lcd(13,12,11,10,9,8,7);
 
-//{261, 293, 329, 349, 391, 440, 493, 523};
-int Pitch_data[52] ={261, 329, 349, 349 ,391, 391, 329 ,391, 349, //9
-329, 349, 293, 329, 261, 329, 349, 349 ,391, 391, 329 ,391, 349, //13
-329, 349, 293, 261, 391, 523, 493, 440, 391, 391, 329, 391, 349, //13
-329, 349 ,293, 329, 391, 523, 493, 440, 391, 391, 329, 391, 349, //13
-329, 349 ,293, 261 }; //4->52
-int pitch_data2[46]={262,262,392,392,440,440,392,349,349,330,330,294, //12
-294,262,0,0,392,392,349,349,330,330,294,392,392,349,349,330,330,294, //18
-0,0,262,262,392,392,440,440,392,349,349,330,330,294,294,262}; //16
+int Pitch_data[113]={
+216, 311,349,311,349,349,466,415,391,349,391,391,466,523,349,311,466,466,391,466,466,523,//22
+622,466,622,698,466,466,783,830,783,698,622, 698, 783,830,783,523,587,622,587,622,698,830,//22
+783,698,622,783,698,659,698,523,587,587,783,932,783,622,466,622,698,466,466,783,830,783,698,//23
+622, 698,523,587,659,587,622,698,830,783,698,622,783,698,659,698,783,987,1046,1174,523,587,//22
+523,587,216, 311,349,311,349,349,466,415,391,349,391,391,466,523,349,311,466,466,391,466,466,523};//24
+int pitch_data2[42]={262,262,392,392,440,440,392,349,349,330,330,294, //12
+294,262,392,392,349,349,330,330,294,392,392,349,349,330,330,294, //18
+262,262,392,392,440,440,392,349,349,330,330,294,294,262}; //16
 int pitch_data3[10]={293,261,176,246,246,293,261,176,246,246};
 int pin_BUZZER=A0;
-int pin_LED[8]={13,12,11,10,9,8,7,6};
-int pin_SWITCH[4]={5,4,3,2};
-int pin_SWITCH_cnt[3]={0,0,0};
 
+int pin_SWITCH[4]={5,4,3,6};
+
+
+volatile int i=0,j=0;
 volatile int count =0;
-int data;
-int endsong=1;
+int data=1;
 
 
 void setup() {
   // put your setup code here, to run once:
-  int i,j;
-  Serial.begin(9600);
+  
+ 
   pinMode(pin_BUZZER,OUTPUT);
-  pinMode(5,OUTPUT);//5번핀을 5볼트로 VCC
-  digitalWrite(5,HIGH);//5번핀을 5볼트로 VCC
-  pinMode(4,OUTPUT);//4번핀을 4볼트로 VCC
-  digitalWrite(4,HIGH);//4번핀을 4볼트로 VCC
-  pinMode(3,OUTPUT);//3번핀을 3볼트로 VCC
-  digitalWrite(3,HIGH);//3번핀을 3볼트로 VCC
-  for(i=0; i<8; i++){
-    pinMode(pin_LED[i],OUTPUT);
-  }
-  for(j=0; j<4; j++){
-    pinMode(pin_SWITCH[j],INPUT);
-  }
-  pinMode(2,INPUT);
+  pinMode(pin_SWITCH[0],INPUT);
+  pinMode(pin_SWITCH[1],INPUT);
+  pinMode(pin_SWITCH[2],INPUT);
+  pinMode(pin_SWITCH[3],INPUT);
+  
   attachInterrupt(digitalPinToInterrupt(2),switch_ISR,FALLING); // 핀번호,호출 함수,rising(falling)
-
+  Serial.begin(9600);
   Wire.begin();
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  int i,j;
-
-  Wire.beginTransmission(8);
-  
+  lcd.begin(16,2);
+  lcd.print("Press Song[1]");
+  lcd.setCursor(0,1);
+  lcd.print("Press Song[2]");
+  delay(2000);
+  lcd.clear();
+  lcd.print("Exit [3]");
+  lcd.setCursor(0,1);
+  lcd.print("Pause [4]");
+  delay(2000);
+  lcd.clear();
 
   
   if(digitalRead(pin_SWITCH[0])){
-      data=1;
-     
+      lcd.clear();
+      lcd.print("Listening");
+      lcd.setCursor(0,1);
+      lcd.print("Cruel Engel.....");
+      Wire.beginTransmission(8);
+      data=1; 
       Wire.write(data);
       Wire.endTransmission();
-      Serial.print("You are listening Happy HOUSE");
-      for(i=0;i<8;i++){
-        digitalWrite(pin_LED[i], HIGH);
-        delay(5);
-            for(j=7; j>=0;j--){
-              digitalWrite(pin_LED[j],LOW);
-               delay(5);
-                          }
-                         }
-      for(i=7; i>=0; i--){
-        digitalWrite(pin_LED[i],HIGH);
-        delay(5);
-            for(j=0;j<8;j++){
-                digitalWrite(pin_LED[j],LOW);
-                delay(5);
-                   }
-                 }
-      for(i=0; i<52; i++){
-        if(count%2==0){
-         tone(pin_BUZZER,Pitch_data[i]); // buzzer on - pitch generation
-         delay(500); // waits for a second
-         noTone(pin_BUZZER); // buzzer off
-        
-        while(count%2==1)
-        noTone(pin_BUZZER);
-        }
-       
-    }
-    endsong=0;
-    Wire.write(endsong);
-    Wire.endTransmission();
-    }
-  else if(digitalRead(pin_SWITCH[1])){
-       data=2;
-       
-       Wire.write(data);
-       Wire.endTransmission();
-       Serial.print("School Song");
-      for(i=0;i<8;i++){
-         digitalWrite(pin_LED[i], HIGH);
-         delay(5);
-             for(j=7; j>=0;j--){
-                  digitalWrite(pin_LED[j],LOW);
-                  delay(5);
-                              }
-                          }
-       for(i=7; i>=0; i--){
-           digitalWrite(pin_LED[i],HIGH);
-           delay(5);
-                 for(j=0;j<8;j++){
-                     digitalWrite(pin_LED[j],LOW);
-                     delay(5);
-    }
+      mode_1();
+      delay(1000);
   }
-     for(j=0; j<46; j++){
-      if(count%2==0){
-         tone(pin_BUZZER,pitch_data2[j]); // buzzer on - pitch generation
-         delay(500); // waits for a second
-         noTone(pin_BUZZER); // buzzer off
-        
-      while(count%2==1)
-      noTone(pin_BUZZER);
-     }
-     }
-     data=0;
+  
+  if(digitalRead(pin_SWITCH[1])){
+      lcd.clear();
+      lcd.print("Listening");
+      lcd.setCursor(0,1);
+      lcd.print("Little Star.....");
+      Wire.beginTransmission(8);
+      data=2;
+      Wire.write(data);
+      Wire.endTransmission();
+      mode_2();
+      delay(1000);
+  }
+  
+  if(digitalRead(pin_SWITCH[3]))
+  {
+    Serial.print('3');
+    Wire.beginTransmission(8);
+    data=3;
     Wire.write(data);
     Wire.endTransmission();
-  }else if(digitalRead(pin_SWITCH[2])){
-       data=3;
-       Wire.write(data);
-       Wire.endTransmission();
-       Serial.print("School Song");
-      for(i=0;i<8;i++){
-         digitalWrite(pin_LED[i], HIGH);
-         delay(5);
-             for(j=7; j>=0;j--){
-                  digitalWrite(pin_LED[j],LOW);
-                  delay(5);
-                              }
-                          }
-       for(i=7; i>=0; i--){
-           digitalWrite(pin_LED[i],HIGH);
-           delay(5);
-                 for(j=0;j<8;j++){
-                     digitalWrite(pin_LED[j],LOW);
-                     delay(5);
-    }
+    delay(1000);
   }
-     for(j=0; j<46; j++){
-      if(count%2==0){
-         tone(pin_BUZZER,pitch_data3[j]); // buzzer on - pitch generation
-         delay(200); // waits for a second
-         noTone(pin_BUZZER); // buzzer off
-      
-      while(count%2==1)
-        noTone(pin_BUZZER);
-     }
-   }
-   data=0;
-    Wire.write(data);
-    Wire.endTransmission();
-  }
-
-  
-  
- 
- delay(100); // waits for a second
- 
 }
 void switch_ISR()
 {
   count++;
+}
+void mode_1()
+{
+      Serial.print("You are listening Cruel Engel");
+      for(i=0; i<113; i++){
+        if(count%2==0){
+         lcd.clear();
+         lcd.setCursor(0,1);
+         lcd.print("Cruel Engel.....");
+         tone(pin_BUZZER,Pitch_data[i]); // buzzer on - pitch generation
+         delay(150); // waits for a second
+         noTone(pin_BUZZER); // buzzer off
+        
+        while(count%2==1)
+        { 
+          lcd.setCursor(0,0);
+          lcd.print("   !Pause!");
+          noTone(pin_BUZZER);
+          if(digitalRead(pin_SWITCH[2]))
+          return loop();
+        }
+        if(digitalRead(pin_SWITCH[2]))
+         return loop();
+        }
+      }
+    }
+void mode_2()
+{
+       
+     Serial.print("Little Star");
+     for(j=0; j<42; j++){ 
+      if(count%2==0){  
+         if(j>=0&&j<5)
+         {
+          lcd.clear();
+          lcd.setCursor(0,0);
+          lcd.print("Little Star.....");
+          lcd.setCursor(0,1);
+          lcd.print("do do sol sol ra");
+         }
+
+         if(j>=5&&j<10)
+         {
+          lcd.clear();
+          lcd.setCursor(0,0);
+          lcd.print("Little Star.....");
+          lcd.setCursor(0,1);
+          lcd.print("ra sol pa pa mi");
+         }
+         if(j>=10&&j<15)
+         {
+          lcd.clear();
+          lcd.setCursor(0,0);
+          lcd.print("Little Star.....");
+          lcd.setCursor(0,1);
+          lcd.print("mi re re do sol");
+         }
+         if(j>=15&&j<20)
+         {
+          lcd.clear();
+          lcd.setCursor(0,0);
+          lcd.print("Little Star.....");
+          lcd.setCursor(0,1);
+          lcd.print("sol pa pa mi mi");
+         }
+         if(j>=20&&j<25)
+         {
+          lcd.clear();
+          lcd.setCursor(0,0);
+          lcd.print("Little Star.....");
+          lcd.setCursor(0,1);
+          lcd.print("re sol sol pa pa");
+         }
+         if(j>=25&&j<30)
+         {
+          lcd.clear();
+          lcd.setCursor(0,0);
+          lcd.print("Little Star.....");
+          lcd.setCursor(0,1);
+          lcd.print("mi mi re do do");
+         }
+         if(j>=30&&j<35)
+         {lcd.clear();
+          lcd.setCursor(0,0);
+         lcd.print("Little Star.....");
+         lcd.setCursor(0,1);
+         lcd.print("solsol ra ra sol");
+         }
+         if(j>=35&&j<40)
+         {lcd.clear();
+          lcd.setCursor(0,0);
+         lcd.print("Little Star.....");
+         lcd.setCursor(0,1);
+         lcd.print("pa pa mi mi re");
+         }
+         if(j>=40&&j<42)
+         {lcd.clear();
+          lcd.setCursor(0,0);
+         lcd.print("Little Star.....");
+         lcd.setCursor(0,1);
+         lcd.print("re do");
+         }
+         tone(pin_BUZZER,pitch_data2[j]); // buzzer on - pitch generation
+         delay(500); // waits for a second
+         noTone(pin_BUZZER); // buzzer off
+         
+      while(count%2==1)
+      {   
+        lcd.setCursor(0,0);
+        lcd.print("   !Pause!");
+        noTone(pin_BUZZER);
+        if(digitalRead(pin_SWITCH[2]))
+        return loop();
+      }
+      if(digitalRead(pin_SWITCH[2]))
+      return loop();
+    }
+  }   
 }
